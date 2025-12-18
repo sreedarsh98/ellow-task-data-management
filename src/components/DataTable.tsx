@@ -30,11 +30,13 @@ export function DataTable({ data, isLoading = false }: DataTableProps) {
   });
   const [currentPage, setCurrentPage] = useState(1);
 
+  /* -------------------- Debounced Search -------------------- */
   const debouncedSetSearch = useMemo(
-    () => debounce((value: string) => {
-      setDebouncedSearchTerm(value);
-      setCurrentPage(1);
-    }, 300),
+    () =>
+      debounce((value: string) => {
+        setDebouncedSearchTerm(value);
+        setCurrentPage(1);
+      }, 300),
     []
   );
 
@@ -42,38 +44,36 @@ export function DataTable({ data, isLoading = false }: DataTableProps) {
     debouncedSetSearch(searchTerm);
   }, [searchTerm, debouncedSetSearch]);
 
+  /* -------------------- Filter Options -------------------- */
   const availableCategories = useMemo(() => {
-    const categories = new Set(data.map((record) => record.category));
-    return Array.from(categories).sort();
+    return Array.from(new Set(data.map(r => r.category))).sort();
   }, [data]);
 
   const availableStatuses = useMemo(() => {
-    const statuses = new Set(data.map((record) => record.status));
-    return Array.from(statuses).sort();
+    return Array.from(new Set(data.map(r => r.status))).sort();
   }, [data]);
 
+  /* -------------------- Data Processing -------------------- */
   const processedData = useMemo(() => {
     let result = data;
-
     result = searchRecords(result, debouncedSearchTerm);
     result = filterRecords(result, filters);
     result = sortRecords(result, sortConfig);
-
     return result;
   }, [data, debouncedSearchTerm, filters, sortConfig]);
 
-  const paginatedData = useMemo(() => {
-    return paginateRecords(processedData, currentPage, PAGE_SIZE);
-  }, [processedData, currentPage]);
+  const paginatedData = useMemo(
+    () => paginateRecords(processedData, currentPage, PAGE_SIZE),
+    [processedData, currentPage]
+  );
 
   const totalPages = getTotalPages(processedData.length, PAGE_SIZE);
 
+  /* -------------------- Handlers -------------------- */
   const handleSort = useCallback((key: keyof DataRecord) => {
-    setSortConfig((prevSort) => {
-      if (prevSort?.key === key) {
-        if (prevSort.direction === 'asc') {
-          return { key, direction: 'desc' };
-        }
+    setSortConfig(prev => {
+      if (prev?.key === key) {
+        if (prev.direction === 'asc') return { key, direction: 'desc' };
         return null;
       }
       return { key, direction: 'asc' };
@@ -81,15 +81,16 @@ export function DataTable({ data, isLoading = false }: DataTableProps) {
   }, []);
 
   const handleCategoryFilterChange = useCallback((selected: string[]) => {
-    setFilters((prev) => ({ ...prev, categories: selected }));
+    setFilters(prev => ({ ...prev, categories: selected }));
     setCurrentPage(1);
   }, []);
 
   const handleStatusFilterChange = useCallback((selected: string[]) => {
-    setFilters((prev) => ({ ...prev, statuses: selected }));
+    setFilters(prev => ({ ...prev, statuses: selected }));
     setCurrentPage(1);
   }, []);
 
+  /* -------------------- Helpers -------------------- */
   const getSortIcon = (columnKey: keyof DataRecord) => {
     if (sortConfig?.key !== columnKey) {
       return <ArrowUpDown className="w-4 h-4" />;
@@ -116,6 +117,7 @@ export function DataTable({ data, isLoading = false }: DataTableProps) {
     }
   };
 
+  /* -------------------- Loading -------------------- */
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -124,8 +126,10 @@ export function DataTable({ data, isLoading = false }: DataTableProps) {
     );
   }
 
+  /* -------------------- Render -------------------- */
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Top Controls */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
@@ -156,85 +160,93 @@ export function DataTable({ data, isLoading = false }: DataTableProps) {
         </div>
       </div>
 
+      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
+              {/* Serial Number */}
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">
+                #
+              </th>
+
               <th
                 onClick={() => handleSort('id')}
-                className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase cursor-pointer hover:bg-gray-100"
               >
                 <div className="flex items-center gap-2">
-                  ID
-                  {getSortIcon('id')}
+                  ID {getSortIcon('id')}
                 </div>
               </th>
+
               <th
                 onClick={() => handleSort('name')}
-                className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase cursor-pointer hover:bg-gray-100"
               >
                 <div className="flex items-center gap-2">
-                  Name
-                  {getSortIcon('name')}
+                  Name {getSortIcon('name')}
                 </div>
               </th>
+
               <th
                 onClick={() => handleSort('category')}
-                className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase cursor-pointer hover:bg-gray-100"
               >
                 <div className="flex items-center gap-2">
-                  Category
-                  {getSortIcon('category')}
+                  Category {getSortIcon('category')}
                 </div>
               </th>
+
               <th
                 onClick={() => handleSort('status')}
-                className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase cursor-pointer hover:bg-gray-100"
               >
                 <div className="flex items-center gap-2">
-                  Status
-                  {getSortIcon('status')}
+                  Status {getSortIcon('status')}
                 </div>
               </th>
+
               <th
                 onClick={() => handleSort('createdAt')}
-                className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase cursor-pointer hover:bg-gray-100"
               >
                 <div className="flex items-center gap-2">
-                  Created At
-                  {getSortIcon('createdAt')}
+                  Created At {getSortIcon('createdAt')}
                 </div>
               </th>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-gray-200">
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <p className="text-gray-500 text-lg font-medium">No results found</p>
-                    <p className="text-gray-400 text-sm">
-                      Try adjusting your search or filters
-                    </p>
-                  </div>
+                <td colSpan={6} className="px-6 py-12 text-center">
+                  <p className="text-gray-500 text-lg font-medium">
+                    No results found
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    Try adjusting your search or filters
+                  </p>
                 </td>
               </tr>
             ) : (
-              paginatedData.map((record) => (
-                <tr
-                  key={record.id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              paginatedData.map((record, index) => (
+                <tr key={record.id} className="hover:bg-gray-50">
+                  {/* Serial Number */}
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {(currentPage - 1) * PAGE_SIZE + index + 1}
+                  </td>
+
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
                     {record.id}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700">
                     {record.name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  <td className="px-6 py-4 text-sm text-gray-700">
                     {record.category}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4">
                     <span
                       className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(
                         record.status
@@ -243,7 +255,7 @@ export function DataTable({ data, isLoading = false }: DataTableProps) {
                       {record.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  <td className="px-6 py-4 text-sm text-gray-700">
                     {record.createdAt}
                   </td>
                 </tr>
@@ -253,6 +265,7 @@ export function DataTable({ data, isLoading = false }: DataTableProps) {
         </table>
       </div>
 
+      {/* Pagination */}
       {paginatedData.length > 0 && (
         <Pagination
           currentPage={currentPage}

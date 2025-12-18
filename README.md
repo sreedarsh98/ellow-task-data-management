@@ -170,5 +170,5 @@ With more time, I would add:
    - Enhanced keyboard navigation
    - Screen reader optimization
    - ARIA labels and roles
-
+7.**If a Figma design were provided, I would strictly follow the design system, spacing, typography, and interaction guidelines to ensure pixel-perfect implementation**
 
